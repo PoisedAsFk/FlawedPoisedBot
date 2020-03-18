@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Threading;
 using WindowsInput;
 using WindowsInput.Native;
 using EZInput;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 namespace Youtube_Upload_NetFramework
 {
@@ -9,11 +12,15 @@ namespace Youtube_Upload_NetFramework
     {
         private static InputSimulator sim = new InputSimulator();
 
+        [DllImport("User32.dll")]
+        public static extern short GetAsyncKeyState(int key);
+
+
         public string GetCursorCoordinates()
         {
             string cursorCords = string.Empty;
 
-            cursorCords = EZInput.Mouse.GetCursorPosition().ToString();
+            cursorCords = Mouse.GetCursorPosition().ToString();
 
             Console.WriteLine(cursorCords);
             return cursorCords;
@@ -30,44 +37,51 @@ namespace Youtube_Upload_NetFramework
             Console.ReadLine();
         }
 
-        public void UploadVideo(string videofile, string title, string description, string tags)
+        public async Task UploadVideo(string videofile, string title, string description, string tags, CancellationToken ct)
         {
-            MoveCursorToUpload();
-            ClickCursor();
-            System.Threading.Thread.Sleep(1500);
-            TypeSomething(videofile);
-            Console.WriteLine(videofile);
-            System.Threading.Thread.Sleep(1500);
-            ClickEnter();                           // Enter on upload file dialog
-            System.Threading.Thread.Sleep(1500);
-            MoveCursorToTitle();
-            ClickCursor();
-            System.Threading.Thread.Sleep(100);
-            ClickCursor();
-            System.Threading.Thread.Sleep(100);
-            ClickCursor();
-            System.Threading.Thread.Sleep(100);
-            TypeSomething(title);                  // Tripple click title to highlight all, and write in title
-            System.Threading.Thread.Sleep(1000);
-            MoveCursorToDesc();
-            System.Threading.Thread.Sleep(100);
-            ClickCursor();
-            System.Threading.Thread.Sleep(100);
-            ClickCtrlA();
-            System.Threading.Thread.Sleep(1000);
-            InputTextInClipboard(description);              // Click in description and ctrl-a to highlight all, then write in new description
-            System.Threading.Thread.Sleep(100);
-            ClickCtrlV();
-            System.Threading.Thread.Sleep(1000);
-            MoveCursorToTags();
-            System.Threading.Thread.Sleep(100);
-            ClickCursor();
-            System.Threading.Thread.Sleep(1000);
-            InputTextInClipboard(tags);
-            System.Threading.Thread.Sleep(100);
-            ClickCtrlV();
-            System.Threading.Thread.Sleep(1000);
-            ClickEnter();
+            try {
+
+                MoveCursorToUpload();
+                ClickCursor();
+                await Task.Delay(1500, ct);
+                TypeSomething(videofile);
+                Console.WriteLine(videofile);
+                await Task.Delay(1500, ct);
+                ClickEnter();                           // Enter on upload file dialog
+                await Task.Delay(1500, ct);
+                MoveCursorToTitle();
+                ClickCursor();
+                await Task.Delay(100, ct);
+                ClickCursor();
+                await Task.Delay(100, ct);
+                ClickCursor();
+                await Task.Delay(100, ct);
+                TypeSomething(title);                  // Tripple click title to highlight all, and write in title
+                await Task.Delay(1000, ct);
+                MoveCursorToDesc();
+                await Task.Delay(100, ct);
+                ClickCursor();
+                await Task.Delay(100, ct);
+                ClickCtrlA();
+                await Task.Delay(1000, ct);
+                InputTextInClipboard(description);              // Click in description and ctrl-a to highlight all, then write in new description
+                await Task.Delay(100, ct);
+                ClickCtrlV();
+                await Task.Delay(1000, ct);
+                MoveCursorToTags();
+                await Task.Delay(100, ct);
+                ClickCursor();
+                await Task.Delay(1000, ct);
+                InputTextInClipboard(tags);
+                await Task.Delay(100, ct);
+                ClickCtrlV();
+                await Task.Delay(1000, ct);
+                ClickEnter();
+            }
+            catch(TaskCanceledException)
+            {
+
+            }
         }
 
         public void CreateTagsFromTitle(string title)
@@ -76,32 +90,32 @@ namespace Youtube_Upload_NetFramework
 
         public void MoveCursorToUpload()
         {
-            EZInput.Mouse.SetCursorPosition(2739, 300);
+            Mouse.SetCursorPosition(2739, 300);
         }
 
         public void MoveCursorToTitle()
         {
-            EZInput.Mouse.SetCursorPosition(2610, 273);
+            Mouse.SetCursorPosition(2610, 273);
         }
 
         public void MoveCursorToDesc()
         {
-            EZInput.Mouse.SetCursorPosition(2610, 395);
+            Mouse.SetCursorPosition(2610, 395);
         }
 
         public void MoveCursorToTags()
         {
-            EZInput.Mouse.SetCursorPosition(2608, 847);
+            Mouse.SetCursorPosition(2608, 847);
         }
 
         public void ClickCursor()
         {
-            EZInput.Mouse.Click(EZInput.MouseButton.Left);
+            Mouse.Click(EZInput.MouseButton.Left);
         }
 
         public void ClickEnter()
         {
-            EZInput.Keyboard.SendKeyPress(555, EZInput.Key.Enter);
+            Keyboard.SendKeyPress(555, Key.Enter);
         }
 
         public void ClickCtrlA()

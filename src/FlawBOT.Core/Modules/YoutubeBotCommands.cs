@@ -11,12 +11,14 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Windows;
 using FlawBOT.Framework.Services;
+using System.Threading;
 
 namespace FlawBOT.Modules
 {
     public class YoutubeBotCommands : BaseCommandModule
     {
-        Youtube_Upload_NetFramework.YoutubeProgram yt = new Youtube_Upload_NetFramework.YoutubeProgram();
+        readonly Youtube_Upload_NetFramework.YoutubeProgram yt = new Youtube_Upload_NetFramework.YoutubeProgram();
+        CancellationTokenSource cancellCommandTokenSource = null;
 
         [Command("upload")] // let's define this method as a command
         [Description("s.")] // this will be displayed to tell users what this command does when they invoke help
@@ -66,13 +68,33 @@ namespace FlawBOT.Modules
             .WithFooter("File uploaded: " + _fileToBeUploaded)
             .WithColor(new DiscordColor("#6441A5"));
             await ctx.RespondAsync(embed: output.Build()).ConfigureAwait(false);
+
+            cancellCommandTokenSource = new CancellationTokenSource();
+            await yt.UploadVideo(_fileToBeUploaded, _title, _description, _tags, cancellCommandTokenSource.Token);
+            cancellCommandTokenSource.Dispose();
+            cancellCommandTokenSource = null;
             
-
-            yt.UploadVideo(_fileToBeUploaded, _title, _description, _tags);
-
 
             await ctx.RespondAsync($"Upload command completed!");
         }
+
+        [Command("cancell")] // let's define this method as a command
+        [Description("hopefully cancells stuff")] // this will be displayed to tell users what this command does when they invoke help
+        [Aliases("ccc")] // alternative names for the command
+        public async Task CancellCommand(CommandContext ctx)
+        {
+            if (cancellCommandTokenSource != null) 
+            { 
+                cancellCommandTokenSource.Cancel();
+                await ctx.RespondAsync($"Stuff cancelled");
+            }
+            else
+            {
+                await ctx.RespondAsync("Nothing to cancel");
+            }
+
+        }
+
 
 
         [Command("test")] // let's define this method as a command
@@ -81,8 +103,6 @@ namespace FlawBOT.Modules
         public async Task TestCommand(CommandContext ctx, [RemainingText]string inputFile)
         {
 
-
-            yt.InputTextInClipboard(inputFile);
 
             await ctx.RespondAsync($":blobcowboi: Test Method Completed ");
         }
