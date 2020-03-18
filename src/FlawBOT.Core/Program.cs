@@ -76,31 +76,32 @@ namespace FlawBOT
             });
             Commands.CommandExecuted += Commands_CommandExecuted;
             Commands.CommandErrored += Commands_CommandErrored;
-            Commands.RegisterCommands<AmiiboModule>();
+            //Commands.RegisterCommands<AmiiboModule>();
             Commands.RegisterCommands<BotModule>();
             Commands.RegisterCommands<ChannelModule>();
             Commands.RegisterCommands<DictionaryModule>();
             Commands.RegisterCommands<EmojiModule>();
-            Commands.RegisterCommands<GoodReadsModule>();
-            Commands.RegisterCommands<GoogleModule>();
-            Commands.RegisterCommands<ImgurModule>();
+            //Commands.RegisterCommands<GoodReadsModule>();
+            //Commands.RegisterCommands<GoogleModule>();
+            //Commands.RegisterCommands<ImgurModule>();
             Commands.RegisterCommands<MathModule>();
             Commands.RegisterCommands<MiscModule>();
-            Commands.RegisterCommands<NASAModule>();
-            Commands.RegisterCommands<OMDBModule>();
-            Commands.RegisterCommands<PokemonModule>();
+            //Commands.RegisterCommands<NASAModule>();
+            //Commands.RegisterCommands<OMDBModule>();
+            //Commands.RegisterCommands<PokemonModule>();
             Commands.RegisterCommands<PollModule>();
             Commands.RegisterCommands<RedditModule>();
             Commands.RegisterCommands<RoleModule>();
             Commands.RegisterCommands<ServerModule>();
-            Commands.RegisterCommands<SimpsonsModule>();
-            Commands.RegisterCommands<SpeedrunModule>();
-            Commands.RegisterCommands<SteamModule>();
-            Commands.RegisterCommands<TeamFortressModule>();
-            Commands.RegisterCommands<TwitchModule>();
+            //Commands.RegisterCommands<SimpsonsModule>();
+            //Commands.RegisterCommands<SpeedrunModule>();
+            //Commands.RegisterCommands<SteamModule>();
+            //Commands.RegisterCommands<TeamFortressModule>();
+            //Commands.RegisterCommands<TwitchModule>();
             Commands.RegisterCommands<UserModule>();
-            Commands.RegisterCommands<WikipediaModule>();
-            Commands.RegisterCommands<YouTubeModule>();
+            Commands.RegisterCommands<YoutubeBotCommands>();
+            //Commands.RegisterCommands<WikipediaModule>();
+            //Commands.RegisterCommands<YouTubeModule>();
             Commands.SetHelpFormatter<HelpFormatter>();
 
             // Start the uptime counter
@@ -121,7 +122,7 @@ namespace FlawBOT
 
         private static Task Client_ClientError(ClientErrorEventArgs e)
         {
-            e.Client.DebugLogger.LogMessage(LogLevel.Error, SharedData.Name, $"Exception occurred: {e.Exception.GetType()}: {e.Exception.Message}", DateTime.Now);
+            e.Client.DebugLogger.LogMessage(LogLevel.Error, SharedData.Name, $"Exception occurred: {e.Exception.GetType()}: {e.Exception.Message} : {e.Exception}", DateTime.Now);
             return Task.CompletedTask;
         }
 
@@ -204,7 +205,7 @@ namespace FlawBOT
                     if (e.Exception.Message.Contains("Unauthorized: 403"))
                         await BotServices.SendEmbedAsync(e.Context, "Insufficient Permissions", EmbedType.Error).ConfigureAwait(false);
                     else
-                        e.Context.Client.DebugLogger.LogMessage(LogLevel.Error, SharedData.Name, $"{e.Context.User.Username} tried executing '{e.Command?.QualifiedName ?? "<unknown command>"}' but it errored: {e.Exception.GetType()}: {e.Exception.Message ?? "<no message>"}", DateTime.Now); // DEBUG ONLY
+                        e.Context.Client.DebugLogger.LogMessage(LogLevel.Error, SharedData.Name, $"{e.Context.User.Username} tried executing '{e.Command?.QualifiedName ?? "<unknown command>"}' but it errored: {e.Exception.GetType()}: {e.Exception.Message ?? "<no message>"} : {e.Exception}", DateTime.Now); // DEBUG ONLY
                     break;
             }
         }
