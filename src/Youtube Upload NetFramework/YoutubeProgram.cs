@@ -13,7 +13,7 @@ namespace Youtube_Upload_NetFramework
         private static InputSimulator sim = new InputSimulator();
 
         [DllImport("User32.dll")]
-        public static extern short GetAsyncKeyState(int key);
+        public static extern short GetAsyncKeyState(int vKey);
 
 
         public string GetCursorCoordinates()
@@ -29,10 +29,7 @@ namespace Youtube_Upload_NetFramework
         private static void Main(string[] args)
         {
             Console.ReadKey();
-            if (Keyboard.IsKeyPressed(Key.Control) == true)
-            {
-                Console.WriteLine("owo");
-            }
+            
             Console.WriteLine("pressing c");
             Console.ReadLine();
         }
@@ -83,59 +80,64 @@ namespace Youtube_Upload_NetFramework
 
             }
         }
-
-        public void CreateTagsFromTitle(string title)
+        public async Task CheckForEscapeWhileUploading()
         {
+            while(!IsEscapePressed())
+            {
+                await Task.Delay(50);
+                if (IsEscapePressed())
+                {
+                    return;
+                }
+            }
         }
 
         public void MoveCursorToUpload()
         {
             Mouse.SetCursorPosition(2739, 300);
         }
-
         public void MoveCursorToTitle()
         {
             Mouse.SetCursorPosition(2610, 273);
         }
-
         public void MoveCursorToDesc()
         {
             Mouse.SetCursorPosition(2610, 395);
         }
-
         public void MoveCursorToTags()
         {
             Mouse.SetCursorPosition(2608, 847);
         }
-
         public void ClickCursor()
         {
             Mouse.Click(EZInput.MouseButton.Left);
         }
-
         public void ClickEnter()
         {
             Keyboard.SendKeyPress(555, Key.Enter);
         }
-
         public void ClickCtrlA()
         {
             sim.Keyboard.ModifiedKeyStroke(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_A);
         }
-
         public void ClickCtrlV()
         {
             sim.Keyboard.ModifiedKeyStroke(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_V);
         }
-
         public void TypeSomething(string textToBeTyped)
         {
             sim.Keyboard.TextEntry(textToBeTyped);
         }
-
         public void InputTextInClipboard(string textToBeCopied)
         {
             TextCopy.Clipboard.SetText(textToBeCopied);
         }
+        public bool IsEscapePressed()
+        {
+            bool isPressed;
+            isPressed = sim.InputDeviceState.IsHardwareKeyDown(VirtualKeyCode.ESCAPE);
+            return isPressed;
+        }
+
     }
 }

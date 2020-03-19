@@ -19,6 +19,7 @@ namespace FlawBOT.Modules
     {
         readonly Youtube_Upload_NetFramework.YoutubeProgram yt = new Youtube_Upload_NetFramework.YoutubeProgram();
         CancellationTokenSource cancellCommandTokenSource = null;
+        public bool wasEscapePressed = false;
 
         [Command("upload")] // let's define this method as a command
         [Description("s.")] // this will be displayed to tell users what this command does when they invoke help
@@ -46,7 +47,6 @@ namespace FlawBOT.Modules
             _title = title.Result.Content;
             await ctx.RespondAsync($"Title set to:\n ```{title.Result.Content}```");
 
-
             await ctx.RespondAsync("What do you want the description to be?");
             var desc = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromSeconds(60));
             if (desc.Result != null)
@@ -58,8 +58,8 @@ namespace FlawBOT.Modules
             var tags = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromSeconds(60));
             if (tags.Result != null)
                 _tags = tags.Result.Content;
-                await ctx.RespondAsync($"Tags set to:\n ```{tags.Result.Content}```");
-
+                await ctx.RespondAsync($"Tags set to:\n ```{tags.Result.Content}```\nUpload is starting, if you want to cancel the upload use command ..cancel");
+            
 
             var output = new DiscordEmbedBuilder()
             .WithTitle(_title)
@@ -70,18 +70,20 @@ namespace FlawBOT.Modules
             await ctx.RespondAsync(embed: output.Build()).ConfigureAwait(false);
 
             cancellCommandTokenSource = new CancellationTokenSource();
-            await yt.UploadVideo(_fileToBeUploaded, _title, _description, _tags, cancellCommandTokenSource.Token);
+            Task Uploading = yt.UploadVideo(_fileToBeUploaded, _title, _description, _tags, cancellCommandTokenSource.Token);
+            Task CheckForEscapeWhileUploading = yt.CheckForEscapeWhileUploading();
+            await Task.WhenAny(Uploading, CheckForEscapeWhileUploading);
+            cancellCommandTokenSource.Cancel();
             cancellCommandTokenSource.Dispose();
             cancellCommandTokenSource = null;
-            
 
             await ctx.RespondAsync($"Upload command completed!");
         }
 
-        [Command("cancell")] // let's define this method as a command
-        [Description("hopefully cancells stuff")] // this will be displayed to tell users what this command does when they invoke help
+        [Command("cancel")] // let's define this method as a command
+        [Description("hopefully cancels stuff")] // this will be displayed to tell users what this command does when they invoke help
         [Aliases("ccc")] // alternative names for the command
-        public async Task CancellCommand(CommandContext ctx)
+        public async Task CancelCommand(CommandContext ctx)
         {
             if (cancellCommandTokenSource != null) 
             { 
@@ -100,11 +102,12 @@ namespace FlawBOT.Modules
         [Command("test")] // let's define this method as a command
         [Description("s.")] // this will be displayed to tell users what this command does when they invoke help
         [Aliases("tt")] // alternative names for the command
-        public async Task TestCommand(CommandContext ctx, [RemainingText]string inputFile)
+        public async Task TestCommand(CommandContext ctx)
         {
 
+            wasEscapePressed = yt.IsEscapePressed();
 
-            await ctx.RespondAsync($":blobcowboi: Test Method Completed ");
+            await ctx.RespondAsync($":blobcowboi: Test Method Completed "+wasEscapePressed.ToString());
         }
 
 
@@ -199,6 +202,14 @@ namespace FlawBOT.Modules
         }
 
 
-
+        [Command("thatssopogger")] // let's define this method as a command
+        [Description("thats so pogger")] // this will be displayed to tell users what this command does when they invoke help
+        [Aliases("tsp")] // alternative names for the command
+        public async Task ThatsSoPogger(CommandContext ctx)
+        {
+            await ctx.TriggerTypingAsync();
+            var emoji = DiscordEmoji.FromName(ctx.Client, ":pogger:");
+            await ctx.RespondAsync(emoji);
+        }
     }
 }
