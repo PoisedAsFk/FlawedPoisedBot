@@ -46,7 +46,7 @@ namespace FlawBOT.Modules
                 }
             _title = title.Result.Content;
             await ctx.RespondAsync($"Title set to:\n ```{title.Result.Content}```");
-
+            
             await ctx.RespondAsync("What do you want the description to be?");
             var desc = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromSeconds(60));
             if (desc.Result != null)
@@ -71,7 +71,7 @@ namespace FlawBOT.Modules
 
             cancellCommandTokenSource = new CancellationTokenSource();
             Task Uploading = yt.UploadVideo(_fileToBeUploaded, _title, _description, _tags, cancellCommandTokenSource.Token);
-            Task CheckForEscapeWhileUploading = yt.CheckForEscapeWhileUploading();
+            Task CheckForEscapeWhileUploading = yt.CheckForEscapeWhileUploading(cancellCommandTokenSource.Token);
             await Task.WhenAny(Uploading, CheckForEscapeWhileUploading);
             cancellCommandTokenSource.Cancel();
             cancellCommandTokenSource.Dispose();

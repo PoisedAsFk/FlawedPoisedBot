@@ -80,15 +80,12 @@ namespace Youtube_Upload_NetFramework
 
             }
         }
-        public async Task CheckForEscapeWhileUploading()
+        public async Task CheckForEscapeWhileUploading(CancellationToken ct)
         {
-            while(!IsEscapePressed())
+            while(!IsEscapePressed()&&!ct.IsCancellationRequested)
             {
+                Console.WriteLine("Hi");
                 await Task.Delay(50);
-                if (IsEscapePressed())
-                {
-                    return;
-                }
             }
         }
 
