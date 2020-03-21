@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Threading;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Text;
 using WindowsInput;
 using WindowsInput.Native;
 using EZInput;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
+
 
 namespace Youtube_Upload_NetFramework
 {
@@ -135,6 +138,66 @@ namespace Youtube_Upload_NetFramework
             isPressed = sim.InputDeviceState.IsHardwareKeyDown(VirtualKeyCode.ESCAPE);
             return isPressed;
         }
+
+    }
+
+    public static class ChromeTitle
+    {
+
+        public delegate bool Win32Callback(IntPtr hwnd, IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        static extern bool EnumWindows(Win32Callback enumProc, IntPtr lParam);
+
+        public static bool EnumWindow(IntPtr handle, IntPtr pointer)
+        {
+            List<IntPtr> pointers = GCHandle.FromIntPtr(pointer).Target as List<IntPtr>;
+            pointers.Add(handle);
+            return true;
+        }
+
+        public static List<IntPtr> GetAllWindows()
+        {
+            Win32Callback enumCallback = new Win32Callback(EnumWindow);
+            List<IntPtr> pointers = new List<IntPtr>();
+            GCHandle listHandle = GCHandle.Alloc(pointers);
+            try
+            {
+                EnumWindows(enumCallback, GCHandle.ToIntPtr(listHandle));
+            }
+            finally
+            {
+                if (listHandle.IsAllocated) listHandle.Free();
+            }
+            return pointers;
+        }
+
+        [DllImport("User32", CharSet = CharSet.Auto, SetLastError = true)]
+        public static extern int GetWindowText(IntPtr windowHandle, StringBuilder stringBuilder, int nMaxCount);
+
+        [DllImport("user32.dll", EntryPoint = "GetWindowTextLength", SetLastError = true)]
+        internal static extern int GetWindowTextLength(IntPtr hwnd);
+        public static string GetTitle(IntPtr handle)
+        {
+            int length = GetWindowTextLength(handle);
+            StringBuilder sb = new StringBuilder(length + 1);
+            GetWindowText(handle, sb, sb.Capacity);
+            //if(sb.ToString().ToLower().Contains("upload") == true)
+            //{
+
+            //    Console.WriteLine(handle.ToString());
+            //    GetHandle(handle);
+            //}
+            return sb.ToString();
+        }
+        //public static string GetHandle(IntPtr handle)
+        //{
+        //    StringBuilder title = new StringBuilder(256);
+        //    GetWindowText(handle, title, 256);
+        //    Console.WriteLine("Text from gethandle function" + title);
+        //    return title.ToString();
+        //}
+
 
     }
 }
