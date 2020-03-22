@@ -2,25 +2,21 @@
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity;
-using DSharpPlus;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Threading.Tasks;
-using System.Windows;
-using FlawBOT.Framework.Services;
 using System.Threading;
-using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace FlawBOT.Modules
 {
     public class YoutubeBotCommands : BaseCommandModule
     {
-        readonly Youtube_Upload_NetFramework.YoutubeProgram yt = new Youtube_Upload_NetFramework.YoutubeProgram();
+        private readonly Youtube_Upload_NetFramework.YoutubeProgram yt = new Youtube_Upload_NetFramework.YoutubeProgram();
 
-        CancellationTokenSource cancellCommandTokenSource = null;
+        private CancellationTokenSource cancellCommandTokenSource = null;
         public bool wasEscapePressed = false;
         public bool isUploading = false;
         public bool readyForUpload = false;
@@ -38,12 +34,12 @@ namespace FlawBOT.Modules
             string _tags = "";
 
             await ctx.RespondAsync($"You input {inputFile} as a file to be uploaded");
-            await ctx.RespondAsync("What do you want the title to be? (Type \"cancel\" if you want to exit this command");
+            await ctx.RespondAsync("What do you want the title to be? (Type \"cancel\" if you want to exit this command)");
 
             var interactivity = ctx.Client.GetInteractivity();
             var title = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromSeconds(60));
             if (title.Result.Content == "cancel") { await ctx.RespondAsync($"Stuff cancelled"); return; }
-            if (title.Result != null) 
+            if (title.Result != null)
                 while (title.Result.Content.Length > 100)
                 {
                     await ctx.RespondAsync($"Titles can MAX be 100 Characters, this title was: {title.Result.Content.Length.ToString()} characters long, Try again.");
@@ -52,21 +48,19 @@ namespace FlawBOT.Modules
             _title = title.Result.Content;
             await ctx.RespondAsync($"Title set to:\n ```{title.Result.Content}```");
 
-            await ctx.RespondAsync("What do you want the description to be? (Type \"cancel\" if you want to exit this command");
+            await ctx.RespondAsync("What do you want the description to be? (Type \"cancel\" if you want to exit this command)");
             var desc = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromSeconds(60));
             if (desc.Result.Content == "cancel") { await ctx.RespondAsync($"Stuff cancelled"); return; }
             if (desc.Result != null)
                 _description = desc.Result.Content;
             await ctx.RespondAsync($"Description set to:\n ```{desc.Result.Content}```");
 
-
-            await ctx.RespondAsync("What do you want the tags to be? (Type \"cancel\" if you want to exit this command");
+            await ctx.RespondAsync("What do you want the tags to be? (Type \"cancel\" if you want to exit this command)");
             var tags = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromSeconds(60));
             if (tags.Result.Content == "cancel") { await ctx.RespondAsync($"Stuff cancelled"); return; }
             if (tags.Result != null)
                 _tags = tags.Result.Content;
             await ctx.RespondAsync($"Tags set to:\n ```{tags.Result.Content}```\nUpload is starting, if you want to cancel the upload use command \"..cancel\" If you want to manually check status of the upload run command \"..us\"");
-
 
             var output = new DiscordEmbedBuilder()
             .WithTitle(_title)
@@ -75,22 +69,26 @@ namespace FlawBOT.Modules
             .WithFooter("File uploaded: " + _fileToBeUploaded)
             .WithColor(new DiscordColor("#6441A5"));
             await ctx.RespondAsync(embed: output.Build()).ConfigureAwait(false);
-
+            if(!readyForUpload) { 
+                yt.OpenYoutubeUploadPage();
+                await Task.Delay(5000);
+            }
             cancellCommandTokenSource = new CancellationTokenSource();
             isUploading = true;
             Task.Run(() => UploadStatus(ctx));
             await Task.Delay(1000);
-            if (readyForUpload) { 
-            Task Uploading = yt.UploadVideo(_fileToBeUploaded, _title, _description, _tags, cancellCommandTokenSource.Token);
-            Task CheckForEscapeWhileUploading = yt.CheckForEscapeWhileUploading(cancellCommandTokenSource.Token);
-            await Task.WhenAny(Uploading, CheckForEscapeWhileUploading);
-            cancellCommandTokenSource.Cancel();
-            cancellCommandTokenSource.Dispose();
-            cancellCommandTokenSource = null;
+            if (readyForUpload)
+            {
+                Task Uploading = yt.UploadVideo(_fileToBeUploaded, _title, _description, _tags, cancellCommandTokenSource.Token);
+                Task CheckForEscapeWhileUploading = yt.CheckForEscapeWhileUploading(cancellCommandTokenSource.Token);
+                await Task.WhenAny(Uploading, CheckForEscapeWhileUploading);
+                cancellCommandTokenSource.Cancel();
+                cancellCommandTokenSource.Dispose();
+                cancellCommandTokenSource = null;
 
-            await ctx.RespondAsync($"Upload and metadata entry has been complete, waiting for youtube processing.");
+                await ctx.RespondAsync($"Upload and metadata entry has been complete, waiting for youtube processing.");
             }
-            else 
+            else
             {
                 await ctx.RespondAsync($"Something happened, wasn't ready for upload spam tag Poised!");
             }
@@ -101,8 +99,8 @@ namespace FlawBOT.Modules
         [Aliases("ccc")] // alternative names for the command
         public async Task CancelCommand(CommandContext ctx)
         {
-            if (cancellCommandTokenSource != null) 
-            { 
+            if (cancellCommandTokenSource != null)
+            {
                 cancellCommandTokenSource.Cancel();
                 await ctx.RespondAsync($"Stuff cancelled");
             }
@@ -110,26 +108,24 @@ namespace FlawBOT.Modules
             {
                 await ctx.RespondAsync("Nothing to cancel");
             }
-
         }
-
-
 
         [Command("test")] // let's define this method as a command
         [Description("s.")] // this will be displayed to tell users what this command does when they invoke help
         [Aliases("tt")] // alternative names for the command
         public async Task TestCommand(CommandContext ctx)
         {
-            if (isUploading)
-            {
-                isUploading = false;
-            }else if(!isUploading)
-            {
-                isUploading = true;
-            }
+            //if (isUploading)
+            //{
+            //    isUploading = false;
+            //}
+            //else if (!isUploading)
+            //{
+            //    isUploading = true;
+            //}
+            yt.OpenYoutubeUploadPage();
 
-
-            await ctx.RespondAsync($":blobcowboi: Test Method Completed "+wasEscapePressed.ToString());
+            await ctx.RespondAsync($":blobcowboi: Test Method Completed " + wasEscapePressed.ToString());
         }
 
         [Command("UploadStatus")] // let's define this method as a command
@@ -137,19 +133,19 @@ namespace FlawBOT.Modules
         [Aliases("US")] // alternative names for the command
         public async Task UploadStatus(CommandContext ctx)
         {
-
             //GetChromeWindowTitles.GetAllWindows().Select(GetChromeWindowTitles.GetTitle).Where(x => x.ToLower().Contains("upload")).ToList().ForEach(Console.WriteLine);
 
             string newStatus = "";
             string currentStatus = "";
 
-            while (isUploading) {
+            while (isUploading)
+            {
                 await Task.Delay(500);
                 List<string> list = Youtube_Upload_NetFramework.ChromeTitle.GetAllWindows().Select(Youtube_Upload_NetFramework.ChromeTitle.GetTitle).Where(x => x.ToLower().Contains("upload")).ToList();
                 newStatus = string.Join("", list.ToArray());
-                if (list.Count!=1) 
+                if (list.Count != 1)
                 {
-                    await ctx.RespondAsync($"Couldn't find youtube upload page spam ping poised ");
+                    await ctx.RespondAsync($"Couldn't find youtube upload page spam ping poised");
                     readyForUpload = false;
                     isUploading = false;
                     return;
@@ -166,25 +162,25 @@ namespace FlawBOT.Modules
                     else if (newStatus.Contains("0 of 1"))
                     {
                         await ctx.RespondAsync("Upload has started.");
+                        readyForUpload = false;
                     }
                     else if (newStatus.Contains("1 of 1"))
                     {
                         await ctx.RespondAsync("Upload complete");
                         isUploading = false;
+                        readyForUpload = false;
                         return;
                     }
                 }
-
-
             }
 
-            if (!isUploading) { 
-            await ctx.RespondAsync($"No upload currently happening ");
+            if (!isUploading)
+            {
+                await ctx.RespondAsync($"No upload currently happening ");
             }
             isUploading = false;
             readyForUpload = false;
         }
-
 
         [Command("movecursor")] // let's define this method as a command
         [Description("s.")] // this will be displayed to tell users what this command does when they invoke help
@@ -200,7 +196,6 @@ namespace FlawBOT.Modules
             await ctx.RespondAsync($"owo ");
         }
 
-
         [Command("savetxt")] // let's define this method as a command
         [Description("Save message text into a .txt file for future use by bot.")] // this will be displayed to tell users what this command does when they invoke help
         [Aliases("st")] // alternative names for the command
@@ -210,17 +205,13 @@ namespace FlawBOT.Modules
             // users know we're working
             await ctx.TriggerTypingAsync();
 
-
             var wholeMessage = ctx.Message.Content.Remove(0, 5);
 
             string txtGeneratedName = ctx.User.Username + DateTime.Now.ToString("yyyyMMdd_hhmmss") + ".txt";
             File.WriteAllText(@"C:\Testing\" + txtGeneratedName, wholeMessage);
 
-
-
             await ctx.RespondAsync($" Your message was saved to a txt " + txtGeneratedName);
         }
-
 
         [Command("readtext")] // let's define this method as a command
         [Description("Output the content of named text file")] // this will be displayed to tell users what this command does when they invoke help
@@ -230,7 +221,6 @@ namespace FlawBOT.Modules
             // let's trigger a typing indicator to let
             // users know we're working
             await ctx.TriggerTypingAsync();
-
 
             var fileFromMessage = ctx.Message.Content.Remove(0, 5);
 
@@ -245,8 +235,6 @@ namespace FlawBOT.Modules
             {
                 try
                 {
-
-
                     string textFileContent = File.ReadAllText(@"C:\Testing\" + fileFromMessage);
                     await ctx.RespondAsync($" The txt file contains: " + textFileContent);
                 }
@@ -256,7 +244,6 @@ namespace FlawBOT.Modules
                     await ctx.RespondAsync("Could not find file, mistyped or file may not exist.");
                 }
             }
-
         }
 
         [Command("getfiles")] // let's define this method as a command
@@ -276,7 +263,6 @@ namespace FlawBOT.Modules
             await ctx.RespondAsync($" Files: \n" + listOfFiles);
         }
 
-
         [Command("thatssopogger")] // let's define this method as a command
         [Description("thats so pogger")] // this will be displayed to tell users what this command does when they invoke help
         [Aliases("tsp")] // alternative names for the command
@@ -286,6 +272,7 @@ namespace FlawBOT.Modules
             var emoji = DiscordEmoji.FromName(ctx.Client, ":pogger:");
             await ctx.RespondAsync(emoji);
         }
+
         [Command("yeehaw")] // let's define this method as a command
         [Description(":cowboi:")] // this will be displayed to tell users what this command does when they invoke help
         [Aliases("cb")] // alternative names for the command
@@ -295,6 +282,7 @@ namespace FlawBOT.Modules
             var emoji = DiscordEmoji.FromName(ctx.Client, ":cowboi:");
             await ctx.RespondAsync(emoji);
         }
+
         [Command("botmoji")] // let's define this method as a command
         [Description(":cowboi:")] // this will be displayed to tell users what this command does when they invoke help
         [Aliases("bm")] // alternative names for the command
@@ -302,7 +290,7 @@ namespace FlawBOT.Modules
         {
             await ctx.TriggerTypingAsync();
             //var emoji = DiscordEmoji.FromName(ctx.Client, ctx.Message.Content);
-            
+
             await ctx.RespondAsync(message);
         }
     }
