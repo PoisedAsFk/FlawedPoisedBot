@@ -353,6 +353,8 @@ healthchecksdb
 # Backup folder for Package Reference Convert tool in Visual Studio 2017
 MigrationBackup/
 
-# End of https://www.gitignore.io/api/visualstudio
 src/FlawBOT.Core/config.json
 config.json
+
+# End of https://www.gitignore.io/api/visualstudio
+
