@@ -138,32 +138,17 @@ namespace Youtube_Upload_NetFramework
             isPressed = sim.InputDeviceState.IsHardwareKeyDown(VirtualKeyCode.ESCAPE);
             return isPressed;
         }
-         public void MoveCursorToClassic()
-        {
-            Mouse.SetCursorPosition(3164, 147);
-        }
 
         public void OpenYoutubeUploadPage()
         {
             Process process = new Process();
             process.StartInfo.FileName = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe";
             process.StartInfo.Arguments = "https://www.youtube.com/upload?redirect_to_creator=true&fr=4&ar=1584831033098 --window-position=1920,0 --window-size=1920,1080";
-            process.Start(); 
+            process.Start();
         }
 
-        public async Task GoToClassicUploadPage()
-        {
-            MoveCursorToClassic();
-            await Task.Delay(100);
-            ClickCursor();
-            Mouse.SetCursorPosition(3129, 798);
-            await Task.Delay(500);
-            ClickCursor();
-            await Task.Delay(1500);
-        }
 
     }
-
 
     public static class ChromeTitle
     {

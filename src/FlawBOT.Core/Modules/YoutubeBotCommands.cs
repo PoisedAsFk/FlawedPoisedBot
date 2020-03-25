@@ -69,19 +69,14 @@ namespace FlawBOT.Modules
             .WithFooter("File uploaded: " + _fileToBeUploaded)
             .WithColor(new DiscordColor("#6441A5"));
             await ctx.RespondAsync(embed: output.Build()).ConfigureAwait(false);
-
-
-
-
-            cancellCommandTokenSource = new CancellationTokenSource();
-            isUploading = true;
-            Task.Run(() => UploadStatus(ctx));
-            await Task.Delay(7500);
-            if (!readyForUpload)
-            {
+            if(!readyForUpload) { 
                 yt.OpenYoutubeUploadPage();
                 await Task.Delay(5000);
             }
+            cancellCommandTokenSource = new CancellationTokenSource();
+            isUploading = true;
+            Task.Run(() => UploadStatus(ctx));
+            await Task.Delay(1000);
             if (readyForUpload)
             {
                 Task Uploading = yt.UploadVideo(_fileToBeUploaded, _title, _description, _tags, cancellCommandTokenSource.Token);
@@ -90,7 +85,7 @@ namespace FlawBOT.Modules
                 cancellCommandTokenSource.Cancel();
                 cancellCommandTokenSource.Dispose();
                 cancellCommandTokenSource = null;
-                
+
                 await ctx.RespondAsync($"Upload and metadata entry has been complete, waiting for youtube processing.");
             }
             else
@@ -120,7 +115,15 @@ namespace FlawBOT.Modules
         [Aliases("tt")] // alternative names for the command
         public async Task TestCommand(CommandContext ctx)
         {
-            await Task.Run(() => yt.GoToClassicUploadPage());
+            //if (isUploading)
+            //{
+            //    isUploading = false;
+            //}
+            //else if (!isUploading)
+            //{
+            //    isUploading = true;
+            //}
+            yt.OpenYoutubeUploadPage();
 
             await ctx.RespondAsync($":blobcowboi: Test Method Completed " + wasEscapePressed.ToString());
         }
@@ -137,8 +140,8 @@ namespace FlawBOT.Modules
 
             while (isUploading)
             {
-                await Task.Delay(250);
-                List<string> list = Youtube_Upload_NetFramework.ChromeTitle.GetAllWindows().Select(Youtube_Upload_NetFramework.ChromeTitle.GetTitle).Where(x => x.ToLower().Contains("upload") || x.ToLower().Contains("channel videos")).ToList();
+                await Task.Delay(500);
+                List<string> list = Youtube_Upload_NetFramework.ChromeTitle.GetAllWindows().Select(Youtube_Upload_NetFramework.ChromeTitle.GetTitle).Where(x => x.ToLower().Contains("upload")).ToList();
                 newStatus = string.Join("", list.ToArray());
                 if (list.Count != 1)
                 {
@@ -146,12 +149,6 @@ namespace FlawBOT.Modules
                     readyForUpload = false;
                     isUploading = false;
                     return;
-                }
-
-                if (newStatus.ToLower().Contains("channel videos"))
-                {
-                    await yt.GoToClassicUploadPage();
-                    await Task.Delay(1200);
                 }
                 if (newStatus != currentStatus)
                 {
