@@ -127,9 +127,8 @@ namespace FlawBOT.Modules
         [Aliases("tt")] // alternative names for the command
         public async Task TestCommand(CommandContext ctx)
         {
-            await Task.Run(() => yt.GoToClassicUploadPage());
 
-            await ctx.RespondAsync($":blobcowboi: Test Method Completed " + wasEscapePressed.ToString());
+            await ctx.RespondAsync($":blobcowboi: Test Method Completed ");
         }
 
         [Command("UploadStatus")] // let's define this method as a command
