@@ -45,7 +45,6 @@ namespace Youtube_Upload_NetFramework
                 ClickCursor();
                 await Task.Delay(1500, ct);
                 TypeSomething(videofile);
-                Console.WriteLine(videofile);
                 await Task.Delay(1500, ct);
                 ClickEnter();                           // Enter on upload file dialog
                 await Task.Delay(1500, ct);
@@ -87,33 +86,38 @@ namespace Youtube_Upload_NetFramework
         {
             while(!IsEscapePressed()&&!ct.IsCancellationRequested)
             {
-                Console.WriteLine("Hi");
-                await Task.Delay(50);
+                await Task.Delay(100);
             }
         }
 
         public void MoveCursorToUpload()
         {
+            Console.WriteLine("MoveCursorToUpload");
             Mouse.SetCursorPosition(2739, 300);
         }
         public void MoveCursorToTitle()
         {
+            Console.WriteLine("MoveCursorToTitle");
             Mouse.SetCursorPosition(2610, 273);
         }
         public void MoveCursorToDesc()
         {
+            Console.WriteLine("MoveCursorToDesc");
             Mouse.SetCursorPosition(2610, 395);
         }
         public void MoveCursorToTags()
         {
+            Console.WriteLine("MoveCursorToTags");
             Mouse.SetCursorPosition(2608, 847);
         }
         public void ClickCursor()
         {
+            Console.WriteLine("ClickCursor");
             Mouse.Click(EZInput.MouseButton.Left);
         }
         public void ClickEnter()
         {
+            Console.WriteLine("ClickEnter");
             Keyboard.SendKeyPress(555, Key.Enter);
         }
         public void ClickCtrlA()
@@ -140,19 +144,22 @@ namespace Youtube_Upload_NetFramework
         }
          public void MoveCursorToClassic()
         {
+            Console.WriteLine("MoveCursorToClassic");
             Mouse.SetCursorPosition(3164, 147);
         }
 
         public void OpenYoutubeUploadPage()
         {
+            Console.WriteLine("OpenYoutubeUploadPage");
             Process process = new Process();
             process.StartInfo.FileName = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe";
-            process.StartInfo.Arguments = "https://www.youtube.com/upload?redirect_to_creator=true&fr=4&ar=1584831033098 --window-position=1920,0 --window-size=1920,1080";
+            process.StartInfo.Arguments = "youtube.com/upload?redirect_to_creator=true&fr=4&ar=1584831033098 --new-window --window-position=1920,0 --window-size=1920,1080";
             process.Start(); 
         }
 
         public async Task GoToClassicUploadPage()
         {
+            Console.WriteLine("GoToClassicUploadPageStart");
             MoveCursorToClassic();
             await Task.Delay(100);
             ClickCursor();
@@ -160,6 +167,7 @@ namespace Youtube_Upload_NetFramework
             await Task.Delay(500);
             ClickCursor();
             await Task.Delay(1500);
+            Console.WriteLine("GoToClassicUploadPageEnd");
         }
 
     }

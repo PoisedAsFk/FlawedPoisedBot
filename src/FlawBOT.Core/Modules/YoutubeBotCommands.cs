@@ -26,6 +26,7 @@ namespace FlawBOT.Modules
         [Aliases("up")] // alternative names for the command
         public async Task UploadVideo(CommandContext ctx, [RemainingText]string inputFile)
         {
+            Console.WriteLine("UploadVideoCommandStarted with file: " + inputFile);
             await ctx.TriggerTypingAsync();
 
             string _fileToBeUploaded = inputFile;
@@ -46,6 +47,7 @@ namespace FlawBOT.Modules
                     title = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromSeconds(60));
                 }
             _title = title.Result.Content;
+            Console.WriteLine($"Title set");
             await ctx.RespondAsync($"Title set to:\n ```{title.Result.Content}```");
 
             await ctx.RespondAsync("What do you want the description to be? (Type \"cancel\" if you want to exit this command)");
@@ -53,6 +55,7 @@ namespace FlawBOT.Modules
             if (desc.Result.Content == "cancel") { await ctx.RespondAsync($"Stuff cancelled"); return; }
             if (desc.Result != null)
                 _description = desc.Result.Content;
+            Console.WriteLine($"Desc set ");
             await ctx.RespondAsync($"Description set to:\n ```{desc.Result.Content}```");
 
             await ctx.RespondAsync("What do you want the tags to be? (Type \"cancel\" if you want to exit this command)");
@@ -60,6 +63,7 @@ namespace FlawBOT.Modules
             if (tags.Result.Content == "cancel") { await ctx.RespondAsync($"Stuff cancelled"); return; }
             if (tags.Result != null)
                 _tags = tags.Result.Content;
+            Console.WriteLine($"Tags set ");
             await ctx.RespondAsync($"Tags set to:\n ```{tags.Result.Content}```\nUpload is starting, if you want to cancel the upload use command \"..cancel\" If you want to manually check status of the upload run command \"..us\"");
 
             var output = new DiscordEmbedBuilder()
@@ -69,32 +73,36 @@ namespace FlawBOT.Modules
             .WithFooter("File uploaded: " + _fileToBeUploaded)
             .WithColor(new DiscordColor("#6441A5"));
             await ctx.RespondAsync(embed: output.Build()).ConfigureAwait(false);
-
+            Console.WriteLine($"Metadata input complete");
 
 
 
             cancellCommandTokenSource = new CancellationTokenSource();
             isUploading = true;
             Task.Run(() => UploadStatus(ctx));
-            await Task.Delay(7500);
-            if (!readyForUpload)
-            {
-                yt.OpenYoutubeUploadPage();
-                await Task.Delay(5000);
-            }
+            await Task.Delay(5000);
+            //if (yt.GoToClassicUploadPage().Status == TaskStatus.WaitingToRun || yt.GoToClassicUploadPage().Status == TaskStatus.Running)
+            //{
+            //    Console.WriteLine($"Task GoToClassicUploadPage is running and is getting extra awaited");
+            //    await yt.GoToClassicUploadPage();
+            //    await Task.Delay(2000);
+            //}
+            await Task.Delay(5000);
             if (readyForUpload)
             {
+                Console.WriteLine($"Upload command, readyForUpload");
                 Task Uploading = yt.UploadVideo(_fileToBeUploaded, _title, _description, _tags, cancellCommandTokenSource.Token);
                 Task CheckForEscapeWhileUploading = yt.CheckForEscapeWhileUploading(cancellCommandTokenSource.Token);
                 await Task.WhenAny(Uploading, CheckForEscapeWhileUploading);
                 cancellCommandTokenSource.Cancel();
                 cancellCommandTokenSource.Dispose();
                 cancellCommandTokenSource = null;
-                
+                Console.WriteLine($"Upload and metadata entry has been complete, waiting for youtube processing.");
                 await ctx.RespondAsync($"Upload and metadata entry has been complete, waiting for youtube processing.");
             }
             else
             {
+                Console.WriteLine($"Something happened, wasn't ready for upload spam tag Poised");
                 await ctx.RespondAsync($"Something happened, wasn't ready for upload spam tag Poised!");
             }
         }
@@ -130,8 +138,8 @@ namespace FlawBOT.Modules
         [Aliases("US")] // alternative names for the command
         public async Task UploadStatus(CommandContext ctx)
         {
+            Console.WriteLine($"Task UploadStatus Started");
             //GetChromeWindowTitles.GetAllWindows().Select(GetChromeWindowTitles.GetTitle).Where(x => x.ToLower().Contains("upload")).ToList().ForEach(Console.WriteLine);
-
             string newStatus = "";
             string currentStatus = "";
 
@@ -142,6 +150,15 @@ namespace FlawBOT.Modules
                 newStatus = string.Join("", list.ToArray());
                 if (list.Count != 1)
                 {
+                    if (!readyForUpload)
+                    {
+                        Console.WriteLine($"Upload command, !readyForUpload");
+                        yt.OpenYoutubeUploadPage();
+                        await Task.Delay(5000);
+                        continue;
+                    }
+
+                    Console.WriteLine($"Couldn't find youtube upload page spam ping poised");
                     await ctx.RespondAsync($"Couldn't find youtube upload page spam ping poised");
                     readyForUpload = false;
                     isUploading = false;
@@ -150,6 +167,7 @@ namespace FlawBOT.Modules
 
                 if (newStatus.ToLower().Contains("channel videos"))
                 {
+                    Console.WriteLine($"Upload command, found \"channel videos\"");
                     await yt.GoToClassicUploadPage();
                     await Task.Delay(1200);
                 }
@@ -159,16 +177,19 @@ namespace FlawBOT.Modules
 
                     if (newStatus.Contains("Upload"))
                     {
+                        Console.WriteLine($"Upload command, Ready for upload");
                         await ctx.RespondAsync("Ready for upload");
                         readyForUpload = true;
                     }
                     else if (newStatus.Contains("0 of 1"))
                     {
+                        Console.WriteLine($"Upload command, Upload has started");
                         await ctx.RespondAsync("Upload has started.");
                         readyForUpload = false;
                     }
                     else if (newStatus.Contains("1 of 1"))
                     {
+                        Console.WriteLine($"Upload command, Upload complete");
                         await ctx.RespondAsync("Upload complete");
                         isUploading = false;
                         readyForUpload = false;
@@ -179,10 +200,12 @@ namespace FlawBOT.Modules
 
             if (!isUploading)
             {
+                Console.WriteLine($"Upload command, !isuploading, no upload currently happening");
                 await ctx.RespondAsync($"No upload currently happening ");
             }
             isUploading = false;
             readyForUpload = false;
+            Console.WriteLine($"Task UploadStatus Ran to End");
         }
 
         [Command("movecursor")] // let's define this method as a command
