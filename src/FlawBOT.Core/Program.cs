@@ -76,40 +76,40 @@ namespace FlawBOT
             });
             Commands.CommandExecuted += Commands_CommandExecuted;
             Commands.CommandErrored += Commands_CommandErrored;
-            Commands.RegisterCommands<AmiiboModule>();
             Commands.RegisterCommands<BotModule>();
-            Commands.RegisterCommands<ChannelModule>();
-            Commands.RegisterCommands<DictionaryModule>();
-            Commands.RegisterCommands<EmojiModule>();
-            Commands.RegisterCommands<GoodReadsModule>();
-            Commands.RegisterCommands<GoogleModule>();
-            Commands.RegisterCommands<ImgurModule>();
-            Commands.RegisterCommands<MathModule>();
-            Commands.RegisterCommands<MiscModule>();
-            Commands.RegisterCommands<NASAModule>();
-            Commands.RegisterCommands<OMDBModule>();
-            Commands.RegisterCommands<PokemonModule>();
-            Commands.RegisterCommands<PollModule>();
-            Commands.RegisterCommands<RedditModule>();
-            Commands.RegisterCommands<RoleModule>();
             Commands.RegisterCommands<ServerModule>();
-            Commands.RegisterCommands<SimpsonsModule>();
-            Commands.RegisterCommands<SpeedrunModule>();
-            Commands.RegisterCommands<SteamModule>();
-            Commands.RegisterCommands<TeamFortressModule>();
-            Commands.RegisterCommands<TwitchModule>();
+            Commands.RegisterCommands<ChannelModule>();
+            Commands.RegisterCommands<RoleModule>();
             Commands.RegisterCommands<UserModule>();
+            //Commands.RegisterCommands<AmiiboModule>();
+            //Commands.RegisterCommands<DictionaryModule>();
+            //Commands.RegisterCommands<EmojiModule>();
+            //Commands.RegisterCommands<GoodReadsModule>();
+            //Commands.RegisterCommands<GoogleModule>();
+            //Commands.RegisterCommands<ImgurModule>();
+            //Commands.RegisterCommands<MathModule>();
+            //Commands.RegisterCommands<MiscModule>();
+            //Commands.RegisterCommands<NASAModule>();
+            //Commands.RegisterCommands<OMDBModule>();
+            //Commands.RegisterCommands<PokemonModule>();
+            //Commands.RegisterCommands<PollModule>();
+            //Commands.RegisterCommands<RedditModule>();
+            //Commands.RegisterCommands<SimpsonsModule>();
+            //Commands.RegisterCommands<SpeedrunModule>();
+            //Commands.RegisterCommands<SteamModule>();
+            //Commands.RegisterCommands<TeamFortressModule>();
+            //Commands.RegisterCommands<TwitchModule>();
+            //Commands.RegisterCommands<WikipediaModule>();
+            //Commands.RegisterCommands<YouTubeModule>();
             Commands.RegisterCommands<YoutubeBotCommands>();
-            Commands.RegisterCommands<WikipediaModule>();
-            Commands.RegisterCommands<YouTubeModule>();
             Commands.SetHelpFormatter<HelpFormatter>();
 
             // Start the uptime counter
             Console.Title = SharedData.Name + " (" + SharedData.Version + ")";
             SharedData.ProcessStarted = DateTime.Now;
-            await SteamService.UpdateSteamListAsync().ConfigureAwait(false);
-            await TeamFortressService.UpdateTF2SchemaAsync().ConfigureAwait(false);
-            await PokemonService.UpdatePokemonListAsync().ConfigureAwait(false);
+            //await SteamService.UpdateSteamListAsync().ConfigureAwait(false);
+            //await TeamFortressService.UpdateTF2SchemaAsync().ConfigureAwait(false);
+            //await PokemonService.UpdatePokemonListAsync().ConfigureAwait(false);
             await Client.ConnectAsync().ConfigureAwait(false); // Connect and log into Discord
             await Task.Delay(-1).ConfigureAwait(false); // Prevent the console window from closing
         }

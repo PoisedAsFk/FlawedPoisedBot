@@ -4,7 +4,6 @@ using DSharpPlus.Entities;
 using DSharpPlus.Interactivity;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -215,8 +214,6 @@ namespace FlawBOT.Modules
         {
             await ctx.TriggerTypingAsync();
 
-            var wholeMessage = ctx.Message.Content.Remove(0, 5);
-
             Console.Write(pos1.ToString() + " " + pos2.ToString());
             // yt.MoveCursorToUpload(pos1, pos2); ////////////////////////////////////Fix if wanna use custom cursor cord
             await ctx.RespondAsync($"owo ");
@@ -231,10 +228,8 @@ namespace FlawBOT.Modules
             // users know we're working
             await ctx.TriggerTypingAsync();
 
-            var wholeMessage = ctx.Message.Content.Remove(0, 5);
-
             string txtGeneratedName = ctx.User.Username + DateTime.Now.ToString("yyyyMMdd_hhmmss") + ".txt";
-            File.WriteAllText(@"C:\Testing\" + txtGeneratedName, wholeMessage);
+            File.WriteAllText(@"C:\Testing\" + txtGeneratedName, message);
 
             await ctx.RespondAsync($" Your message was saved to a txt " + txtGeneratedName);
         }
@@ -248,9 +243,7 @@ namespace FlawBOT.Modules
             // users know we're working
             await ctx.TriggerTypingAsync();
 
-            var fileFromMessage = ctx.Message.Content.Remove(0, 5);
-
-            if (fileFromMessage == "latest")
+            if (message.ToLower().Contains("latest"))
             {
                 var latestFileInFolder = Directory.GetFiles(@"C:\Testing\").OrderByDescending(d => new FileInfo(d).CreationTime).Take(1).Select(Path.GetFileName).ToArray();
                 string latestFile = string.Join("", latestFileInFolder);
@@ -261,7 +254,7 @@ namespace FlawBOT.Modules
             {
                 try
                 {
-                    string textFileContent = File.ReadAllText(@"C:\Testing\" + fileFromMessage);
+                    string textFileContent = File.ReadAllText(@"C:\Testing\" + message);
                     await ctx.RespondAsync($" The txt file contains: " + textFileContent);
                 }
                 catch (FileNotFoundException e)

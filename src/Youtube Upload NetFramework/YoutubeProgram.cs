@@ -1,29 +1,27 @@
-﻿using System;
-using System.Threading;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
+﻿using EZInput;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using WindowsInput;
 using WindowsInput.Native;
-using EZInput;
-using System.Diagnostics;
 
 namespace Youtube_Upload_NetFramework
 {
     public class YoutubeProgram
     {
-        private static InputSimulator sim = new InputSimulator();
+        private static readonly InputSimulator sim = new InputSimulator();
 
         [DllImport("User32.dll")]
         public static extern short GetAsyncKeyState(int vKey);
 
-
         public string GetCursorCoordinates()
         {
-            string cursorCords = string.Empty;
 
-            cursorCords = Mouse.GetCursorPosition().ToString();
+            string cursorCords = Mouse.GetCursorPosition().ToString();
 
             Console.WriteLine(cursorCords);
             return cursorCords;
@@ -32,15 +30,15 @@ namespace Youtube_Upload_NetFramework
         private static void Main(string[] args)
         {
             Console.ReadKey();
-            
+
             Console.WriteLine("pressing c");
             Console.ReadLine();
         }
 
         public async Task UploadVideo(string videofile, string title, string description, string tags, CancellationToken ct)
         {
-            try {
-
+            try
+            {
                 MoveCursorToUpload();
                 ClickCursor();
                 await Task.Delay(1500, ct);
@@ -77,14 +75,14 @@ namespace Youtube_Upload_NetFramework
                 await Task.Delay(1000, ct);
                 ClickEnter();
             }
-            catch(TaskCanceledException)
+            catch (TaskCanceledException)
             {
-
             }
         }
+
         public async Task CheckForEscapeWhileUploading(CancellationToken ct)
         {
-            while(!IsEscapePressed()&&!ct.IsCancellationRequested)
+            while (!IsEscapePressed() && !ct.IsCancellationRequested)
             {
                 await Task.Delay(100);
             }
@@ -95,54 +93,65 @@ namespace Youtube_Upload_NetFramework
             Console.WriteLine("MoveCursorToUpload");
             Mouse.SetCursorPosition(2739, 300);
         }
+
         public void MoveCursorToTitle()
         {
             Console.WriteLine("MoveCursorToTitle");
             Mouse.SetCursorPosition(2610, 273);
         }
+
         public void MoveCursorToDesc()
         {
             Console.WriteLine("MoveCursorToDesc");
             Mouse.SetCursorPosition(2610, 395);
         }
+
         public void MoveCursorToTags()
         {
             Console.WriteLine("MoveCursorToTags");
             Mouse.SetCursorPosition(2608, 847);
         }
+
         public void ClickCursor()
         {
             Console.WriteLine("ClickCursor");
             Mouse.Click(EZInput.MouseButton.Left);
         }
+
         public void ClickEnter()
         {
             Console.WriteLine("ClickEnter");
             Keyboard.SendKeyPress(555, Key.Enter);
         }
+
         public void ClickCtrlA()
         {
             sim.Keyboard.ModifiedKeyStroke(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_A);
         }
+
         public void ClickCtrlV()
         {
             sim.Keyboard.ModifiedKeyStroke(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_V);
         }
+
         public void TypeSomething(string textToBeTyped)
         {
             sim.Keyboard.TextEntry(textToBeTyped);
         }
+
         public void InputTextInClipboard(string textToBeCopied)
         {
             TextCopy.Clipboard.SetText(textToBeCopied);
         }
+
         public bool IsEscapePressed()
         {
             bool isPressed;
             isPressed = sim.InputDeviceState.IsHardwareKeyDown(VirtualKeyCode.ESCAPE);
             return isPressed;
         }
-         public void MoveCursorToClassic()
+
+        public void MoveCursorToClassic()
         {
             Console.WriteLine("MoveCursorToClassic");
             Mouse.SetCursorPosition(3164, 147);
@@ -154,7 +163,7 @@ namespace Youtube_Upload_NetFramework
             Process process = new Process();
             process.StartInfo.FileName = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe";
             process.StartInfo.Arguments = "youtube.com/upload?redirect_to_creator=true&fr=4&ar=1584831033098 --new-window --window-position=1920,0 --window-size=1920,1080";
-            process.Start(); 
+            process.Start();
         }
 
         public async Task GoToClassicUploadPage()
@@ -169,17 +178,14 @@ namespace Youtube_Upload_NetFramework
             await Task.Delay(1500);
             Console.WriteLine("GoToClassicUploadPageEnd");
         }
-
     }
-
 
     public static class ChromeTitle
     {
-
         public delegate bool Win32Callback(IntPtr hwnd, IntPtr lParam);
 
         [DllImport("user32.dll")]
-        static extern bool EnumWindows(Win32Callback enumProc, IntPtr lParam);
+        private static extern bool EnumWindows(Win32Callback enumProc, IntPtr lParam);
 
         public static bool EnumWindow(IntPtr handle, IntPtr pointer)
         {
@@ -209,6 +215,7 @@ namespace Youtube_Upload_NetFramework
 
         [DllImport("user32.dll", EntryPoint = "GetWindowTextLength", SetLastError = true)]
         internal static extern int GetWindowTextLength(IntPtr hwnd);
+
         public static string GetTitle(IntPtr handle)
         {
             int length = GetWindowTextLength(handle);
@@ -216,12 +223,12 @@ namespace Youtube_Upload_NetFramework
             GetWindowText(handle, sb, sb.Capacity);
             //if(sb.ToString().ToLower().Contains("upload") == true)
             //{
-
             //    Console.WriteLine(handle.ToString());
             //    GetHandle(handle);
             //}
             return sb.ToString();
         }
+
         //public static string GetHandle(IntPtr handle)
         //{
         //    StringBuilder title = new StringBuilder(256);
@@ -229,7 +236,5 @@ namespace Youtube_Upload_NetFramework
         //    Console.WriteLine("Text from gethandle function" + title);
         //    return title.ToString();
         //}
-
-
     }
 }
