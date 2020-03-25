@@ -160,7 +160,7 @@ namespace Youtube_Upload_NetFramework
             await Task.Delay(500);
             ClickCursor();
             await Task.Delay(1500);
-        } 
+        }
 
     }
 
