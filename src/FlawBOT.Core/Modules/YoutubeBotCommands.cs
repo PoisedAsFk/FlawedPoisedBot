@@ -17,8 +17,6 @@ namespace FlawBOT.Modules
 
         private CancellationTokenSource cancellCommandTokenSource = null;
         public bool wasEscapePressed = false;
-        public bool isUploading = false;
-        public bool readyForUpload = false;
 
         [Command("upload")] // let's define this method as a command
         [Description("s.")] // this will be displayed to tell users what this command does when they invoke help
@@ -28,82 +26,68 @@ namespace FlawBOT.Modules
             Console.WriteLine("UploadVideoCommandStarted with file: " + inputFile);
             await ctx.TriggerTypingAsync();
 
-            string _fileToBeUploaded = inputFile;
-            string _title = "";
-            string _description = "";
-            string _tags = "";
+            string fileToBeUploaded = inputFile;
 
             await ctx.RespondAsync($"You input {inputFile} as a file to be uploaded");
             await ctx.RespondAsync("What do you want the title to be? (Type \"cancel\" if you want to exit this command)");
 
             var interactivity = ctx.Client.GetInteractivity();
-            var title = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromSeconds(60));
-            if (title.Result.Content == "cancel") { await ctx.RespondAsync($"Stuff cancelled"); return; }
-            if (title.Result != null)
-                while (title.Result.Content.Length > 100)
+            var titleMessage = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromSeconds(60));
+            if (titleMessage.Result.Content == "cancel") { await ctx.RespondAsync($"Stuff cancelled"); return; }
+            if (titleMessage.Result != null)
+                while (titleMessage.Result.Content.Length > 100)
                 {
-                    await ctx.RespondAsync($"Titles can MAX be 100 Characters, this title was: {title.Result.Content.Length.ToString()} characters long, Try again.");
-                    title = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromSeconds(60));
+                    await ctx.RespondAsync($"Titles can MAX be 100 Characters, this title was: {titleMessage.Result.Content.Length.ToString()} characters long, Try again.");
+                    titleMessage = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromSeconds(60));
                 }
-            _title = title.Result.Content;
+            var title = titleMessage.Result.Content;
             Console.WriteLine($"Title set");
-            await ctx.RespondAsync($"Title set to:\n ```{title.Result.Content}```");
+            await ctx.RespondAsync($"Title set to:\n ```{titleMessage.Result.Content}```");
 
             await ctx.RespondAsync("What do you want the description to be? (Type \"cancel\" if you want to exit this command)");
             var desc = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromSeconds(60));
             if (desc.Result.Content == "cancel") { await ctx.RespondAsync($"Stuff cancelled"); return; }
-            if (desc.Result != null)
-                _description = desc.Result.Content;
+            string description = desc.Result.Content;
             Console.WriteLine($"Desc set ");
             await ctx.RespondAsync($"Description set to:\n ```{desc.Result.Content}```");
 
             await ctx.RespondAsync("What do you want the tags to be? (Type \"cancel\" if you want to exit this command)");
-            var tags = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromSeconds(60));
-            if (tags.Result.Content == "cancel") { await ctx.RespondAsync($"Stuff cancelled"); return; }
-            if (tags.Result != null)
-                _tags = tags.Result.Content;
+            var tagsMessage = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromSeconds(60));
+            if (tagsMessage.Result.Content == "cancel") { await ctx.RespondAsync($"Stuff cancelled"); return; }
+            var tags = tagsMessage.Result.Content;
             Console.WriteLine($"Tags set ");
-            await ctx.RespondAsync($"Tags set to:\n ```{tags.Result.Content}```\nUpload is starting, if you want to cancel the upload use command \"..cancel\" If you want to manually check status of the upload run command \"..us\"");
+            await ctx.RespondAsync($"Tags set to:\n ```{tagsMessage.Result.Content}```\nUpload is starting, if you want to cancel the upload use command \"..cancel\" If you want to manually check status of the upload run command \"..us\"");
 
             var output = new DiscordEmbedBuilder()
-            .WithTitle(_title)
-            .WithDescription(_description)
-            .AddField("Tags: ", _tags)
-            .WithFooter("File uploaded: " + _fileToBeUploaded)
+            .WithTitle(title)
+            .WithDescription(description)
+            .AddField("Tags: ", tags)
+            .WithFooter("File uploaded: " + fileToBeUploaded)
             .WithColor(new DiscordColor("#6441A5"));
             await ctx.RespondAsync(embed: output.Build()).ConfigureAwait(false);
             Console.WriteLine($"Metadata input complete");
 
-
-
             cancellCommandTokenSource = new CancellationTokenSource();
-            isUploading = true;
-            Task.Run(() => UploadStatus(ctx));
-            await Task.Delay(5000);
-            //if (yt.GoToClassicUploadPage().Status == TaskStatus.WaitingToRun || yt.GoToClassicUploadPage().Status == TaskStatus.Running)
+            await DoUpload(ctx, fileToBeUploaded, title, description, tags, cancellCommandTokenSource.Token);
+            //Task.Run(() => DoUpload(ctx));
+            //await Task.Delay(10000);
+            //if (readyForUpload)
             //{
-            //    Console.WriteLine($"Task GoToClassicUploadPage is running and is getting extra awaited");
-            //    await yt.GoToClassicUploadPage();
-            //    await Task.Delay(2000);
+            //    Console.WriteLine($"Upload command, readyForUpload");
+            //    Task Uploading = yt.UploadVideo(fileToBeUploaded, title, description, _tags, cancellCommandTokenSource.Token);
+            //    Task CheckForEscapeWhileUploading = yt.CheckForEscapeWhileUploading(cancellCommandTokenSource.Token);
+            //    await Task.WhenAny(Uploading, CheckForEscapeWhileUploading);
+            //    cancellCommandTokenSource.Cancel();
+            //    cancellCommandTokenSource.Dispose();
+            //    cancellCommandTokenSource = null;
+            //    Console.WriteLine($"Upload and metadata entry has been complete, waiting for youtube processing.");
+            //    await ctx.RespondAsync($"Upload and metadata entry has been complete, waiting for youtube processing.");
             //}
-            await Task.Delay(5000);
-            if (readyForUpload)
-            {
-                Console.WriteLine($"Upload command, readyForUpload");
-                Task Uploading = yt.UploadVideo(_fileToBeUploaded, _title, _description, _tags, cancellCommandTokenSource.Token);
-                Task CheckForEscapeWhileUploading = yt.CheckForEscapeWhileUploading(cancellCommandTokenSource.Token);
-                await Task.WhenAny(Uploading, CheckForEscapeWhileUploading);
-                cancellCommandTokenSource.Cancel();
-                cancellCommandTokenSource.Dispose();
-                cancellCommandTokenSource = null;
-                Console.WriteLine($"Upload and metadata entry has been complete, waiting for youtube processing.");
-                await ctx.RespondAsync($"Upload and metadata entry has been complete, waiting for youtube processing.");
-            }
-            else
-            {
-                Console.WriteLine($"Something happened, wasn't ready for upload spam tag Poised");
-                await ctx.RespondAsync($"Something happened, wasn't ready for upload spam tag Poised!");
-            }
+            //else
+            //{
+            //    Console.WriteLine($"Something happened, wasn't ready for upload spam tag Poised");
+            //    await ctx.RespondAsync($"Something happened, wasn't ready for upload spam tag Poised!");
+            //}
         }
 
         [Command("cancel")] // let's define this method as a command
@@ -127,83 +111,100 @@ namespace FlawBOT.Modules
         [Aliases("tt")] // alternative names for the command
         public async Task TestCommand(CommandContext ctx)
         {
+            yt.OpenYoutubeUploadPage();
 
             await ctx.RespondAsync($":blobcowboi: Test Method Completed ");
         }
 
-        [Command("UploadStatus")] // let's define this method as a command
-        [Description("s.")] // this will be displayed to tell users what this command does when they invoke help
-        [Aliases("US")] // alternative names for the command
-        public async Task UploadStatus(CommandContext ctx)
+        private static List<IntPtr> GetIntPtrWindowHandlesForYoutubeUploadPage()
+        {
+            return Youtube_Upload_NetFramework.ChromeTitle.GetAllWindows()
+                            .Select(x =>
+                            {
+                                var title = Youtube_Upload_NetFramework.ChromeTitle.GetTitle(x).ToLower();
+                                return Tuple.Create(x, title.Contains("upload") || title.Contains("channel videos"));
+                            })
+                            .Where(x => x.Item2)
+                            .Select(x => x.Item1)
+                            .ToList();
+        }
+
+        private async Task DoUpload(CommandContext ctx, string fileToBeUploaded, string title, string description, string tags, CancellationToken ct)
         {
             Console.WriteLine($"Task UploadStatus Started");
-            //GetChromeWindowTitles.GetAllWindows().Select(GetChromeWindowTitles.GetTitle).Where(x => x.ToLower().Contains("upload")).ToList().ForEach(Console.WriteLine);
-            string newStatus = "";
-            string currentStatus = "";
-
-            while (isUploading)
+            IntPtr windowHandlePtr;
+            int count = 0;
+            while(true)
             {
-                await Task.Delay(250);
-                List<string> list = Youtube_Upload_NetFramework.ChromeTitle.GetAllWindows().Select(Youtube_Upload_NetFramework.ChromeTitle.GetTitle).Where(x => x.ToLower().Contains("upload") || x.ToLower().Contains("channel videos")).ToList();
-                newStatus = string.Join("", list.ToArray());
-                if (list.Count != 1)
+                if(count > 10)
                 {
-                    if (!readyForUpload)
-                    {
-                        Console.WriteLine($"Upload command, !readyForUpload");
-                        yt.OpenYoutubeUploadPage();
-                        await Task.Delay(5000);
-                        continue;
-                    }
+                    // ANOTHER ERROR??? weird shit happened here, this shit basically never happen
+                    return;
+                }
+                var list = GetIntPtrWindowHandlesForYoutubeUploadPage();
 
-                    Console.WriteLine($"Couldn't find youtube upload page spam ping poised");
-                    await ctx.RespondAsync($"Couldn't find youtube upload page spam ping poised");
-                    readyForUpload = false;
-                    isUploading = false;
+                if(list.Count > 1)
+                {
+                    // ERROR??
                     return;
                 }
 
-                if (newStatus.ToLower().Contains("channel videos"))
+                if(list.Count == 0)
+                {
+                    ++count;
+                    yt.OpenYoutubeUploadPage();
+                    await Task.Delay(5000);
+                    continue;
+                }
+
+                // list.Count == 1
+                windowHandlePtr = list[0];
+                break;
+            }
+
+            while (true)
+            {
+                await Task.Delay(250);
+                var uploadWindowTitle = Youtube_Upload_NetFramework.ChromeTitle.GetTitle(windowHandlePtr);
+
+                if (uploadWindowTitle.ToLower().Contains("channel videos"))
                 {
                     Console.WriteLine($"Upload command, found \"channel videos\"");
                     await yt.GoToClassicUploadPage();
                     await Task.Delay(1200);
                 }
-                if (newStatus != currentStatus)
-                {
-                    currentStatus = newStatus;
 
-                    if (newStatus.Contains("Upload"))
-                    {
-                        Console.WriteLine($"Upload command, Ready for upload");
-                        await ctx.RespondAsync("Ready for upload");
-                        readyForUpload = true;
-                    }
-                    else if (newStatus.Contains("0 of 1"))
-                    {
-                        Console.WriteLine($"Upload command, Upload has started");
-                        await ctx.RespondAsync("Upload has started.");
-                        readyForUpload = false;
-                    }
-                    else if (newStatus.Contains("1 of 1"))
-                    {
-                        Console.WriteLine($"Upload command, Upload complete");
-                        await ctx.RespondAsync("Upload complete");
-                        isUploading = false;
-                        readyForUpload = false;
-                        return;
-                    }
+                if (uploadWindowTitle.Contains("Upload"))
+                {
+                    Console.WriteLine($"Upload command, Ready for upload");
+                    await ctx.RespondAsync("Ready for upload");
+                    await DoActualUploadThings(ctx, fileToBeUploaded, title, description, tags, ct);
+                }
+                else if (uploadWindowTitle.Contains("0 of 1"))
+                {
+                    Console.WriteLine($"Upload command, Upload has started");
+                    await ctx.RespondAsync("Upload has started.");
+                }
+                else if (uploadWindowTitle.Contains("1 of 1"))
+                {
+                    Console.WriteLine($"Upload command, Upload complete");
+                    await ctx.RespondAsync("Upload complete");
+                    return;
                 }
             }
+        }
 
-            if (!isUploading)
-            {
-                Console.WriteLine($"Upload command, !isuploading, no upload currently happening");
-                await ctx.RespondAsync($"No upload currently happening ");
-            }
-            isUploading = false;
-            readyForUpload = false;
-            Console.WriteLine($"Task UploadStatus Ran to End");
+        private async Task DoActualUploadThings(CommandContext ctx, string fileToBeUploaded, string title, string description, string tags, CancellationToken ct)
+        {
+            Console.WriteLine($"Upload command, readyForUpload");
+            Task Uploading = yt.UploadVideo(fileToBeUploaded, title, description, tags, ct);
+            Task CheckForEscapeWhileUploading = yt.CheckForEscapeWhileUploading(ct);
+            await Task.WhenAny(Uploading, CheckForEscapeWhileUploading);
+            cancellCommandTokenSource.Cancel();
+            cancellCommandTokenSource.Dispose();
+            cancellCommandTokenSource = null;
+            Console.WriteLine($"Upload and metadata entry has been complete, waiting for youtube processing.");
+            await ctx.RespondAsync($"Upload and metadata entry has been complete, waiting for youtube processing.");
         }
 
         [Command("movecursor")] // let's define this method as a command
