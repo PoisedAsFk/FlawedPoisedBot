@@ -170,7 +170,7 @@ namespace Youtube_Upload_NetFramework
         {
             Console.WriteLine("GoToClassicUploadPageStart");
             MoveCursorToClassic();
-            await Task.Delay(100);
+            await Task.Delay(200);
             ClickCursor();
             Mouse.SetCursorPosition(3129, 798);
             await Task.Delay(500);

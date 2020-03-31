@@ -14,6 +14,7 @@ namespace FlawBOT.Modules
     public class YoutubeBotCommands : BaseCommandModule
     {
         private readonly Youtube_Upload_NetFramework.YoutubeProgram yt = new Youtube_Upload_NetFramework.YoutubeProgram();
+        public string folderPath = @"C:\Testing\";
 
         private CancellationTokenSource cancellCommandTokenSource = null;
         public bool wasEscapePressed = false;
@@ -31,18 +32,18 @@ namespace FlawBOT.Modules
             string fileToBeUploaded;
             if (message.ToLower().Contains("latest"))
             {
-                var filesInFolder = Directory.GetFiles(@"C:\Testing\").OrderByDescending(d => new FileInfo(d).CreationTime).Select(Path.GetFileName).ToArray();
+                var filesInFolder = Directory.GetFiles(folderPath).OrderByDescending(d => new FileInfo(d).CreationTime).Select(Path.GetFileName).ToArray();
                 fileToBeUploaded = filesInFolder[0];
                 await ctx.RespondAsync($"Latest file in folder is: \"{fileToBeUploaded}\" and has been selected for upload");
             }
             else
             {
                 fileToBeUploaded = message;
-                while (!File.Exists(@"C:\Testing\" + fileToBeUploaded))
+                while (!File.Exists(folderPath + fileToBeUploaded))
                 {
                     await ctx.RespondAsync($"File \"{fileToBeUploaded}\" could not be found try typing filename again (No \"..upload\" needed.) \n3 Most recent available files: \n{GetNewestXAmountOfFilesInFolder("3")} \nTo cancel this command type \"cancel\"");
                     var fileNotFoundReply = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromSeconds(60));
-                    if (fileNotFoundReply.Result.Content == "cancel") { await ctx.RespondAsync($"Stuff cancelled"); return; }
+                    if (fileNotFoundReply.Result.Content == "cancel") { await ctx.RespondAsync($"Upload fully cancelled."); return; }
                     fileToBeUploaded = fileNotFoundReply.Result.Content;
                 }
                 await ctx.RespondAsync($"Found file {fileToBeUploaded} and it has been selected for upload.");
@@ -52,7 +53,7 @@ namespace FlawBOT.Modules
 
             await ctx.RespondAsync("What do you want the title to be? (Type \"cancel\" if you want to exit this command)");
             var titleMessage = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromSeconds(60));
-            if (titleMessage.Result.Content == "cancel") { await ctx.RespondAsync($"Stuff cancelled"); return; }
+            if (titleMessage.Result.Content == "cancel") { await ctx.RespondAsync($"Upload fully cancelled."); return; }
             if (titleMessage.Result != null)
                 while (titleMessage.Result.Content.Length > 100)
                 {
@@ -65,14 +66,14 @@ namespace FlawBOT.Modules
 
             await ctx.RespondAsync("What do you want the description to be? (Type \"cancel\" if you want to exit this command)");
             var desc = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromSeconds(60));
-            if (desc.Result.Content == "cancel") { await ctx.RespondAsync($"Stuff cancelled"); return; }
+            if (desc.Result.Content == "cancel") { await ctx.RespondAsync($"Upload fully cancelled."); return; }
             string description = desc.Result.Content;
             Console.WriteLine($"Desc set ");
             await ctx.RespondAsync($"Description set to:\n ```{desc.Result.Content}```");
 
-            await ctx.RespondAsync("What do you want the tags to be? (Type \"cancel\" if you want to exit this command)");
+            await ctx.RespondAsync("What do you want the tags to be? (Note, these tags will be added onto the already default ones \n(Type \"cancel\" if you want to exit this command)");
             var tagsMessage = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromSeconds(60));
-            if (tagsMessage.Result.Content == "cancel") { await ctx.RespondAsync($"Stuff cancelled"); return; }
+            if (tagsMessage.Result.Content == "cancel") { await ctx.RespondAsync($"Upload fully cancelled."); return; }
             var tags = tagsMessage.Result.Content;
             Console.WriteLine($"Tags set ");
             await ctx.RespondAsync($"Tags set to:\n ```{tagsMessage.Result.Content}```\nUpload is starting, if you want to cancel the upload use command \"..cancel\" If you want to manually check status of the upload run command \"..us\"");
@@ -98,7 +99,7 @@ namespace FlawBOT.Modules
             if (cancellCommandTokenSource != null)
             {
                 cancellCommandTokenSource.Cancel();
-                await ctx.RespondAsync($"Stuff cancelled");
+                await ctx.RespondAsync($"Upload fully cancelled.");
             }
             else
             {
@@ -107,7 +108,7 @@ namespace FlawBOT.Modules
         }
 
         [Command("test")] // let's define this method as a command
-        [Description("s.")] // this will be displayed to tell users what this command does when they invoke help
+        [Description("Test command, I add random things to while programming to easily check out.")] // this will be displayed to tell users what this command does when they invoke help
         [Aliases("tt")] // alternative names for the command
         public async Task TestCommand(CommandContext ctx)
         {
@@ -161,34 +162,39 @@ namespace FlawBOT.Modules
                 break;
             }
 
+            string currentUploadWindowTitle = "";
             while (true)
             {
                 await Task.Delay(250);
-                var uploadWindowTitle = Youtube_Upload_NetFramework.ChromeTitle.GetTitle(windowHandlePtr);
+                var newUploadWinodwTitle = Youtube_Upload_NetFramework.ChromeTitle.GetTitle(windowHandlePtr);
 
-                if (uploadWindowTitle.ToLower().Contains("channel videos"))
-                {
-                    Console.WriteLine($"Upload command, found \"channel videos\"");
-                    await yt.GoToClassicUploadPage();
-                    await Task.Delay(1200);
-                }
+                if (currentUploadWindowTitle != newUploadWinodwTitle) {
+                    currentUploadWindowTitle = newUploadWinodwTitle;
 
-                if (uploadWindowTitle.Contains("Upload"))
-                {
-                    Console.WriteLine($"Upload command, Ready for upload");
-                    await ctx.RespondAsync("Ready for upload");
-                    await DoActualUploadThings(ctx, fileToBeUploaded, title, description, tags, ct);
-                }
-                else if (uploadWindowTitle.Contains("0 of 1"))
-                {
-                    Console.WriteLine($"Upload command, Upload has started");
-                    await ctx.RespondAsync("Upload has started.");
-                }
-                else if (uploadWindowTitle.Contains("1 of 1"))
-                {
-                    Console.WriteLine($"Upload command, Upload complete");
-                    await ctx.RespondAsync("Upload complete");
-                    return;
+                    if (newUploadWinodwTitle.ToLower().Contains("channel videos"))
+                    {
+                        Console.WriteLine($"Upload command, found \"channel videos\"");
+                        await yt.GoToClassicUploadPage();
+                        await Task.Delay(1200);
+                    }
+
+                    if (newUploadWinodwTitle.Contains("Upload"))
+                    {
+                        Console.WriteLine($"Upload command, Ready for upload");
+                        await ctx.RespondAsync("Ready for upload");
+                        DoActualUploadThings(ctx, fileToBeUploaded, title, description, tags, ct);
+                    }
+                    else if (newUploadWinodwTitle.Contains("0 of 1"))
+                    {
+                        Console.WriteLine($"Upload command, Upload has started");
+                        await ctx.RespondAsync("Upload has started.");
+                    }
+                    else if (newUploadWinodwTitle.Contains("1 of 1"))
+                    {
+                        Console.WriteLine($"Upload command, Upload complete");
+                        await ctx.RespondAsync("Upload complete");
+                        return;
+                    }
                 }
             }
         }
@@ -228,7 +234,7 @@ namespace FlawBOT.Modules
             await ctx.TriggerTypingAsync();
 
             string txtGeneratedName = ctx.User.Username + DateTime.Now.ToString("yyyyMMdd_hhmmss") + ".txt";
-            File.WriteAllText(@"C:\Testing\" + txtGeneratedName, message);
+            File.WriteAllText(folderPath + txtGeneratedName, message);
 
             await ctx.RespondAsync($" Your message was saved to a txt " + txtGeneratedName);
         }
@@ -244,16 +250,16 @@ namespace FlawBOT.Modules
 
             if (message.ToLower().Contains("latest"))
             {
-                var latestFileInFolder = Directory.GetFiles(@"C:\Testing\").OrderByDescending(d => new FileInfo(d).CreationTime).Take(1).Select(Path.GetFileName).ToArray();
+                var latestFileInFolder = Directory.GetFiles(folderPath).OrderByDescending(d => new FileInfo(d).CreationTime).Take(1).Select(Path.GetFileName).ToArray();
                 string latestFile = string.Join("", latestFileInFolder);
-                string textFileContent = File.ReadAllText(@"C:\Testing\" + latestFile);
+                string textFileContent = File.ReadAllText(folderPath + latestFile);
                 await ctx.RespondAsync($" Reading latest file: " + latestFile + "\n" + textFileContent);
             }
             else
             {
                 try
                 {
-                    string textFileContent = File.ReadAllText(@"C:\Testing\" + message);
+                    string textFileContent = File.ReadAllText(folderPath + message);
                     await ctx.RespondAsync($" The txt file contains: " + textFileContent);
                 }
                 catch (FileNotFoundException e)
@@ -286,7 +292,7 @@ namespace FlawBOT.Modules
         public string GetNewestXAmountOfFilesInFolder(string howManyFiles)
         {
             Console.WriteLine("Running GetNewestXAmountOfFilesInFolder");
-            string[] filesInFolder = Directory.GetFiles(@"C:\Testing\").OrderByDescending(d => new FileInfo(d).CreationTime).Select(Path.GetFileName).ToArray();
+            string[] filesInFolder = Directory.GetFiles(folderPath).OrderByDescending(d => new FileInfo(d).CreationTime).Select(Path.GetFileName).ToArray();
             string[] finalFilesTaken;
             string finalText;
 
