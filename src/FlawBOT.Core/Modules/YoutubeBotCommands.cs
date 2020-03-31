@@ -19,19 +19,38 @@ namespace FlawBOT.Modules
         public bool wasEscapePressed = false;
 
         [Command("upload")] // let's define this method as a command
-        [Description("s.")] // this will be displayed to tell users what this command does when they invoke help
+        [Description("Start the upload process. Type \"..getfiles\" to see available files in folder. ")] // this will be displayed to tell users what this command does when they invoke help
         [Aliases("up")] // alternative names for the command
-        public async Task UploadVideo(CommandContext ctx, [RemainingText]string inputFile)
+        public async Task UploadVideo(CommandContext ctx, [Description("File to upload, or \"latest\" to upload newest file bot can find in folder.")] [RemainingText]string message)
         {
-            Console.WriteLine("UploadVideoCommandStarted with file: " + inputFile);
+            Console.WriteLine("UploadVideoCommandStarted with message: " + message);
+            if (message == null) { await ctx.RespondAsync($"You need to specify what file to upload, or say that you want the latest file. Try \"..upload VideoName.mp4\" or \"..upload latest\" to upload the newest file in the folder."); return; }
             await ctx.TriggerTypingAsync();
-
-            string fileToBeUploaded = inputFile;
-
-            await ctx.RespondAsync($"You input {inputFile} as a file to be uploaded");
-            await ctx.RespondAsync("What do you want the title to be? (Type \"cancel\" if you want to exit this command)");
-
             var interactivity = ctx.Client.GetInteractivity();
+
+            string fileToBeUploaded;
+            if (message.ToLower().Contains("latest"))
+            {
+                var filesInFolder = Directory.GetFiles(@"C:\Testing\").OrderByDescending(d => new FileInfo(d).CreationTime).Select(Path.GetFileName).ToArray();
+                fileToBeUploaded = filesInFolder[0];
+                await ctx.RespondAsync($"Latest file in folder is: \"{fileToBeUploaded}\" and has been selected for upload");
+            }
+            else
+            {
+                fileToBeUploaded = message;
+                while (!File.Exists(@"C:\Testing\" + fileToBeUploaded))
+                {
+                    await ctx.RespondAsync($"File \"{fileToBeUploaded}\" could not be found try typing filename again (No \"..upload\" needed.) \n3 Most recent available files: \n{GetNewestXAmountOfFilesInFolder("3")} \nTo cancel this command type \"cancel\"");
+                    var fileNotFoundReply = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromSeconds(60));
+                    if (fileNotFoundReply.Result.Content == "cancel") { await ctx.RespondAsync($"Stuff cancelled"); return; }
+                    fileToBeUploaded = fileNotFoundReply.Result.Content;
+                }
+                await ctx.RespondAsync($"Found file {fileToBeUploaded} and it has been selected for upload.");
+
+            }
+
+
+            await ctx.RespondAsync("What do you want the title to be? (Type \"cancel\" if you want to exit this command)");
             var titleMessage = await interactivity.WaitForMessageAsync(xm => xm.Author.Id == ctx.User.Id, TimeSpan.FromSeconds(60));
             if (titleMessage.Result.Content == "cancel") { await ctx.RespondAsync($"Stuff cancelled"); return; }
             if (titleMessage.Result != null)
@@ -69,25 +88,6 @@ namespace FlawBOT.Modules
 
             cancellCommandTokenSource = new CancellationTokenSource();
             await DoUpload(ctx, fileToBeUploaded, title, description, tags, cancellCommandTokenSource.Token);
-            //Task.Run(() => DoUpload(ctx));
-            //await Task.Delay(10000);
-            //if (readyForUpload)
-            //{
-            //    Console.WriteLine($"Upload command, readyForUpload");
-            //    Task Uploading = yt.UploadVideo(fileToBeUploaded, title, description, _tags, cancellCommandTokenSource.Token);
-            //    Task CheckForEscapeWhileUploading = yt.CheckForEscapeWhileUploading(cancellCommandTokenSource.Token);
-            //    await Task.WhenAny(Uploading, CheckForEscapeWhileUploading);
-            //    cancellCommandTokenSource.Cancel();
-            //    cancellCommandTokenSource.Dispose();
-            //    cancellCommandTokenSource = null;
-            //    Console.WriteLine($"Upload and metadata entry has been complete, waiting for youtube processing.");
-            //    await ctx.RespondAsync($"Upload and metadata entry has been complete, waiting for youtube processing.");
-            //}
-            //else
-            //{
-            //    Console.WriteLine($"Something happened, wasn't ready for upload spam tag Poised");
-            //    await ctx.RespondAsync($"Something happened, wasn't ready for upload spam tag Poised!");
-            //}
         }
 
         [Command("cancel")] // let's define this method as a command
@@ -134,22 +134,22 @@ namespace FlawBOT.Modules
             Console.WriteLine($"Task UploadStatus Started");
             IntPtr windowHandlePtr;
             int count = 0;
-            while(true)
+            while (true)
             {
-                if(count > 10)
+                if (count > 10)
                 {
                     // ANOTHER ERROR??? weird shit happened here, this shit basically never happen
                     return;
                 }
                 var list = GetIntPtrWindowHandlesForYoutubeUploadPage();
 
-                if(list.Count > 1)
+                if (list.Count > 1)
                 {
                     // ERROR??
                     return;
                 }
 
-                if(list.Count == 0)
+                if (list.Count == 0)
                 {
                     ++count;
                     yt.OpenYoutubeUploadPage();
@@ -157,7 +157,6 @@ namespace FlawBOT.Modules
                     continue;
                 }
 
-                // list.Count == 1
                 windowHandlePtr = list[0];
                 break;
             }
@@ -266,20 +265,43 @@ namespace FlawBOT.Modules
         }
 
         [Command("getfiles")] // let's define this method as a command
-        [Description("Outputs list of files bot has access to")] // this will be displayed to tell users what this command does when they invoke help
+        [Description("Outputs list of files bot has access to (Defaults to showing 10 latest files if no parameter was provided)")] // this will be displayed to tell users what this command does when they invoke help
         [Aliases("gf")] // alternative names for the command
-        public async Task GetFiles(CommandContext ctx)
+        public async Task GetFiles(CommandContext ctx, [Description("How many files you want to get from folder. OPTIONAL, Default it will do 10.")] [RemainingText] string message)
         {
-            // let's trigger a typing indicator to let
-            // users know we're working
             await ctx.TriggerTypingAsync();
+            string stringListOfFiles;
 
-            //Get files from folder, sort by creation time, take the latest 10, then get only filename.
-            var filesInFolder = Directory.GetFiles(@"C:\Testing\").OrderByDescending(d => new FileInfo(d).CreationTime).Take(10).Select(Path.GetFileName).ToArray();
-            //Turn array into string to be sent as message
-            string listOfFiles = string.Join("\n", filesInFolder);
+            if (message != null)
+            {
+                stringListOfFiles = GetNewestXAmountOfFilesInFolder(message);
+            }
+            else
+            {
+                stringListOfFiles = GetNewestXAmountOfFilesInFolder("10");
+            }
+            await ctx.RespondAsync($" Files: \n" + stringListOfFiles);
+        }
 
-            await ctx.RespondAsync($" Files: \n" + listOfFiles);
+        public string GetNewestXAmountOfFilesInFolder(string howManyFiles)
+        {
+            Console.WriteLine("Running GetNewestXAmountOfFilesInFolder");
+            string[] filesInFolder = Directory.GetFiles(@"C:\Testing\").OrderByDescending(d => new FileInfo(d).CreationTime).Select(Path.GetFileName).ToArray();
+            string[] finalFilesTaken;
+            string finalText;
+
+            if (int.TryParse(howManyFiles, out int result))
+            {
+                finalFilesTaken = filesInFolder.Take(result).ToArray();
+                finalText = string.Join("\n", finalFilesTaken);
+                return finalText;
+            }
+            if(!int.TryParse(howManyFiles, out _))
+            {
+                finalText = "No characters, only numbers.";
+                return finalText;
+            }
+            return "something fkd happened lol";
         }
 
         [Command("thatssopogger")] // let's define this method as a command
