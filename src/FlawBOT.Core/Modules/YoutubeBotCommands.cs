@@ -85,10 +85,23 @@ namespace FlawBOT.Modules
             .WithFooter("File uploaded: " + fileToBeUploaded)
             .WithColor(new DiscordColor("#6441A5"));
             await ctx.RespondAsync(embed: output.Build()).ConfigureAwait(false);
-            Console.WriteLine($"Metadata input complete");
+
 
             cancellCommandTokenSource = new CancellationTokenSource();
             await DoUpload(ctx, fileToBeUploaded, title, description, tags, cancellCommandTokenSource.Token);
+        }
+
+        [Command("TestUpload")] // let's define this method as a command
+        [Description("Upload with default values")] // this will be displayed to tell users what this command does when they invoke help
+        [Aliases("tu")] // alternative names for the command
+        public async Task TestUpload(CommandContext ctx)
+        {
+            string fileToBeUploaded;
+            var filesInFolder = Directory.GetFiles(folderPath).OrderByDescending(d => new FileInfo(d).CreationTime).Select(Path.GetFileName).ToArray();
+            fileToBeUploaded = filesInFolder[0];
+            await ctx.RespondAsync($"Latest file in folder is: \"{fileToBeUploaded}\" and has been selected for upload");
+            cancellCommandTokenSource = new CancellationTokenSource();
+            await DoUpload(ctx, fileToBeUploaded, "Test Title", "Test description", "test,tags,lol", cancellCommandTokenSource.Token);
         }
 
         [Command("cancel")] // let's define this method as a command
@@ -123,7 +136,7 @@ namespace FlawBOT.Modules
                             .Select(x =>
                             {
                                 var title = Youtube_Upload_NetFramework.ChromeTitle.GetTitle(x).ToLower();
-                                return Tuple.Create(x, title.Contains("upload") || title.Contains("channel videos"));
+                                return Tuple.Create(x, title.Contains("youtube") && title.Contains("upload") || title.Contains("channel videos"));
                             })
                             .Where(x => x.Item2)
                             .Select(x => x.Item1)
@@ -146,8 +159,21 @@ namespace FlawBOT.Modules
 
                 if (list.Count > 1)
                 {
+                    await ctx.RespondAsync("Found 2 or more youtube upload pages, will try to solve, if nothing happens in next 10 or so sec, try running \"..cancel\" and redoing command.");
+                    Console.WriteLine($"2 or more chrome windows which could be youtube upload page has been detected.");
+                    foreach (var item in list)
+                    {
+                        Console.WriteLine($"foreach setforeground");
+                        Youtube_Upload_NetFramework.ChromeTitle.SetForegroundWindow(item);
+                        await Task.Delay(300);
+                        yt.CloseTab();
+
+                    }
+                    Console.WriteLine($"broke out of foreach");
+                    //await ctx.RespondAsync("2 or more chrome windows which could be youtube upload page has been detected. Yell at poised");
                     // ERROR??
-                    return;
+                    //return;
+                    continue;
                 }
 
                 if (list.Count == 0)
@@ -193,6 +219,7 @@ namespace FlawBOT.Modules
                     {
                         Console.WriteLine($"Upload command, Upload complete");
                         await ctx.RespondAsync("Upload complete");
+                        yt.CloseTab();
                         return;
                     }
                 }

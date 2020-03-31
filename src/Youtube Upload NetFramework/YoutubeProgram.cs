@@ -88,6 +88,14 @@ namespace Youtube_Upload_NetFramework
             }
         }
 
+        public void CloseTab()
+        {
+            Console.WriteLine("CloseTab");
+            sim.Keyboard.ModifiedKeyStroke(VirtualKeyCode.CONTROL, VirtualKeyCode.VK_W);
+            sim.Keyboard.Sleep(100);
+            sim.Keyboard.KeyPress(VirtualKeyCode.RETURN);
+        }
+
         public void MoveCursorToUpload()
         {
             Console.WriteLine("MoveCursorToUpload");
@@ -162,7 +170,7 @@ namespace Youtube_Upload_NetFramework
             Console.WriteLine("OpenYoutubeUploadPage");
             Process process = new Process();
             process.StartInfo.FileName = @"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe";
-            process.StartInfo.Arguments = "\"youtube.com/upload?redirect_to_creator=true&fr=4&ar=1584831033098\" --window-position=1920,0 --window-size=1920,1080";
+            process.StartInfo.Arguments = "\"youtube.com/upload\" --window-position=1920,0 --window-size=1920,1080";
             process.Start();
         }
 
@@ -209,6 +217,8 @@ namespace Youtube_Upload_NetFramework
             }
             return pointers;
         }
+        [DllImport("user32.dll")]
+        public static extern bool SetForegroundWindow(IntPtr hWnd);
 
         [DllImport("User32", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern int GetWindowText(IntPtr windowHandle, StringBuilder stringBuilder, int nMaxCount);
